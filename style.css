@@ -1,0 +1,89 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  height: 100%;
+  background: #0b0d10;
+}
+
+#app {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+}
+
+/* Stats.js panel sits top-left by default; nudge it clear of notches/rounded corners */
+.stats-panel {
+  position: fixed !important;
+  top: 8px !important;
+  left: 8px !important;
+}
+
+#loading-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0b0d10;
+  color: #d8d2c4;
+  font: 16px system-ui, sans-serif;
+  letter-spacing: 0.03em;
+  z-index: 10;
+  transition: opacity 0.4s ease;
+}
+
+#loading-screen.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#enter-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(11, 13, 16, 0.45);
+  color: #f2efe6;
+  font: 15px system-ui, sans-serif;
+  cursor: pointer;
+  z-index: 5;
+  transition: opacity 0.3s ease;
+}
+
+#enter-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.enter-box {
+  text-align: center;
+  padding: 20px 28px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 8px;
+  background: rgba(11, 13, 16, 0.6);
+}
+
+.enter-box p {
+  margin: 6px 0;
+}
+
+#torch-hint {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  background: rgba(11, 13, 16, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  padding: 8px 14px;
+  color: #f2efe6;
+  font: 14px system-ui, sans-serif;
+  transition: opacity 0.3s ease;
+}
+
+#torch-hint.hidden {
+  opacity: 0;
+}

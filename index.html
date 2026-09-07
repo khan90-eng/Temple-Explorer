@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Temple Explorer</title>
+  <link rel="stylesheet" href="style.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.169.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.169.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <canvas id="app"></canvas>
+
+  <div id="loading-screen">
+    <div id="loading-text">Loading temple… 0%</div>
+  </div>
+
+  <div id="enter-overlay">
+    <div class="enter-box">
+      <p><strong>Click to enter</strong></p>
+      <p>W A S D or arrow keys to walk · mouse to look · Shift to run · Space to jump · E to light/put out torch · Esc to pause</p>
+    </div>
+  </div>
+
+  <div id="torch-hint" class="hidden">Press E to light your torch</div>
+
+  <script type="module" src="main.js"></script>
+</body>
+</html>
