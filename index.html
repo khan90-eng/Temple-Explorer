@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Temple Explorer</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=11" />
   <script type="importmap">
     {
       "imports": {
@@ -21,15 +21,88 @@
     <div id="loading-text">Loading temple… 0%</div>
   </div>
 
-  <div id="enter-overlay">
+  <!-- Sign-in: asked once, before the walkthrough starts. -->
+  <div id="signin-overlay">
+    <div class="signin-box">
+      <h1>Temple of Horus, Edfu</h1>
+      <p class="signin-sub">A walkthrough study — Department of Architecture, BUET</p>
+
+      <div class="field">
+        <span class="field-label">I am a</span>
+        <div class="role-row">
+          <button type="button" class="role-btn" data-role="student">Student</button>
+          <button type="button" class="role-btn" data-role="other">Other</button>
+        </div>
+      </div>
+
+      <div class="field hidden" id="student-id-field">
+        <label class="field-label" for="student-id">Student ID <span>(optional)</span></label>
+        <input id="student-id" type="text" autocomplete="off" spellcheck="false"
+               placeholder="e.g. 1801007" />
+        <p class="field-note">Only used to match this walkthrough to your questionnaire.</p>
+      </div>
+
+      <label class="consent">
+        <input id="consent-check" type="checkbox" />
+        <span>I agree that my movement and interaction inside this walkthrough
+        is recorded for this study.</span>
+      </label>
+
+      <button type="button" id="signin-start" disabled>Begin</button>
+      <p class="signin-error hidden" id="signin-error">Choose Student or Other, and tick the box.</p>
+    </div>
+  </div>
+
+  <div id="enter-overlay" class="hidden">
     <div class="enter-box">
       <p><strong>Click to enter</strong></p>
       <p>W A S D or arrow keys to walk · mouse to look · Shift to run · Space to jump · E to light/put out torch · Esc to pause</p>
+      <button type="button" id="finish-button">Finish and save my session</button>
+    </div>
+  </div>
+
+  <!-- Appears once the sanctuary is reached, so the visit has a proper end
+       rather than stopping wherever the participant happens to be. -->
+  <div id="end-hint" class="hidden">
+    <strong>You have reached the sanctuary.</strong>
+    Press <kbd>F</kbd> to end your visit — or keep exploring.
+  </div>
+
+  <div id="questionnaire-overlay" class="hidden">
+    <div class="questionnaire-box">
+      <h2>A few questions before you go</h2>
+      <p class="q-intro">Nine short questions, about two minutes. There are no
+      right answers, and you may leave any of them blank.</p>
+      <div id="questionnaire-body"></div>
+      <button type="button" id="questionnaire-submit">Submit and finish</button>
+    </div>
+  </div>
+
+  <div id="finished-overlay" class="hidden">
+    <div class="finished-box">
+      <h2>Thank you</h2>
+      <p id="finished-detail"></p>
+      <p class="finished-note">Your session has been saved and a copy has been
+      downloaded to this computer. You can close this tab now.</p>
     </div>
   </div>
 
   <div id="torch-hint" class="hidden">Press E to light your torch</div>
 
-  <script type="module" src="main.js"></script>
+  <div id="minimap-container">
+    <canvas id="minimap"></canvas>
+    <div id="minimap-debug"></div>
+  </div>
+
+  <div id="coord-readout"></div>
+  <div id="placement-panel" class="hidden"></div>
+  <div id="crosshair"></div>
+
+  <div id="info-book" class="hidden">
+    <img id="info-book-page" alt="" />
+    <div class="book-close-hint">Right-click to close</div>
+  </div>
+
+  <script type="module" src="main.js?v=18"></script>
 </body>
 </html>

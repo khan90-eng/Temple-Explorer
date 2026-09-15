@@ -87,3 +87,545 @@ html, body {
 #torch-hint.hidden {
   opacity: 0;
 }
+
+#minimap-container {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 3;
+  background: rgba(11, 13, 16, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  padding: 6px;
+  pointer-events: none;
+}
+
+#minimap {
+  display: block;
+  height: 260px;
+  width: auto;
+}
+
+/* Temporary calibration readout — remove once the gate-gap is dialed in. */
+#minimap-debug {
+  margin-top: 4px;
+  font: 11px "Consolas", monospace;
+  color: #f2efe6;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Temporary — live X/Y/Z so hotspot positions in content.js can be measured
+   in-game instead of guessed. Remove once all hotspots are placed. */
+#coord-readout {
+  position: fixed;
+  bottom: 8px;
+  left: 8px;
+  z-index: 3;
+  background: rgba(11, 13, 16, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  padding: 4px 8px;
+  color: #f2efe6;
+  font: 11px "Consolas", monospace;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* Temporary authoring tool — the panel for placement mode. Goes away with
+   the rest of the placement code once the checkpoints are settled. */
+#placement-panel {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  min-width: 420px;
+  background: rgba(11, 13, 16, 0.78);
+  border: 1px solid rgba(255, 192, 77, 0.45);
+  border-radius: 8px;
+  padding: 12px 18px;
+  color: #f2efe6;
+  font: 13px system-ui, sans-serif;
+  text-align: center;
+  pointer-events: none;
+}
+
+#placement-panel.hidden {
+  display: none;
+}
+
+#placement-panel .pm-title {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: #ffc04d;
+}
+
+#placement-panel .pm-title span {
+  color: rgba(242, 239, 230, 0.55);
+  letter-spacing: 0.04em;
+}
+
+#placement-panel .pm-current {
+  margin: 7px 0 8px;
+  font-size: 19px;
+  font-weight: 600;
+}
+
+#placement-panel .pm-keys {
+  color: rgba(242, 239, 230, 0.8);
+}
+
+#placement-panel .pm-count {
+  margin-top: 6px;
+  font-size: 12px;
+  color: rgba(242, 239, 230, 0.55);
+}
+
+#placement-panel .flash {
+  margin-top: 9px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  color: #9be89b;
+}
+
+#crosshair {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.8);
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* Info book — the scroll itself. Each checkpoint's page is a single piece of
+   artwork on Provat's own parchment (three of them his originals from the
+   animation, six built to match), so the panel is just the image: no HTML
+   text sits on top of it.
+
+   Opening reproduces the unroll measured off his Temple of Horus.mp4 — the
+   sheet widens from the centre over ~0.55 s, carrying the two rolls (which
+   are painted into the artwork) outward with it. Closing is a plain ~0.4 s
+   fade at full width; it does NOT roll back up, same as the video. */
+#info-book {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 6;
+  width: min(940px, 94vw);
+  transition: opacity 0.4s ease;
+  filter: drop-shadow(0 18px 40px rgba(0, 0, 0, 0.6));
+}
+
+#info-book.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#info-book-page {
+  display: block;
+  width: 100%;
+  height: auto;
+  transform-origin: 50% 50%;
+}
+
+#info-book .book-close-hint {
+  margin-top: 2px;
+  text-align: center;
+  font: italic 12px system-ui, sans-serif;
+  color: rgba(255, 255, 255, 0.5);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+/* Removing .hidden re-applies these rules, which restarts the animation, so
+   every open replays the unroll. */
+#info-book:not(.hidden) #info-book-page {
+  animation: scroll-unroll 0.55s cubic-bezier(0.22, 0.9, 0.3, 1) both;
+}
+
+#info-book:not(.hidden) .book-close-hint {
+  animation: scroll-ink 0.3s ease 0.4s both;
+}
+
+@keyframes scroll-unroll {
+  from { transform: scaleX(0.04); }
+  to   { transform: scaleX(1); }
+}
+
+@keyframes scroll-ink {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* --- Study sign-in, pause and thank-you screens (Session 7) ------------- */
+#signin-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 35%, #1a1a17, #0b0d10 70%);
+  z-index: 8;
+  color: #f2efe6;
+  font: 15px system-ui, sans-serif;
+  transition: opacity 0.4s ease;
+}
+
+#signin-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.signin-box {
+  width: min(440px, 88vw);
+  padding: 34px 38px 30px;
+  border: 1px solid rgba(214, 188, 130, 0.28);
+  border-radius: 10px;
+  background: rgba(11, 13, 16, 0.72);
+}
+
+.signin-box h1 {
+  margin: 0;
+  font-size: 23px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: #e8d9b5;
+}
+
+.signin-sub {
+  margin: 6px 0 26px;
+  font-size: 13px;
+  color: rgba(242, 239, 230, 0.55);
+}
+
+.field { margin-bottom: 20px; }
+
+.field-label {
+  display: block;
+  margin-bottom: 9px;
+  font-size: 13px;
+  letter-spacing: 0.03em;
+  color: rgba(242, 239, 230, 0.75);
+}
+
+.field-label span { color: rgba(242, 239, 230, 0.4); }
+
+.field-note {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: rgba(242, 239, 230, 0.45);
+}
+
+.field.hidden { display: none; }
+
+.role-row { display: flex; gap: 10px; }
+
+.role-btn {
+  flex: 1;
+  padding: 11px 0;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 6px;
+  background: transparent;
+  color: #f2efe6;
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.role-btn:hover { background: rgba(255, 255, 255, 0.07); }
+
+.role-btn.selected {
+  border-color: #d6bc82;
+  background: rgba(214, 188, 130, 0.16);
+  color: #f4e9cd;
+}
+
+#student-id {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #f2efe6;
+  font: inherit;
+}
+
+#student-id:focus {
+  outline: none;
+  border-color: #d6bc82;
+}
+
+.consent {
+  display: flex;
+  gap: 11px;
+  align-items: flex-start;
+  margin: 24px 0 22px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: rgba(242, 239, 230, 0.82);
+  cursor: pointer;
+}
+
+.consent input {
+  margin: 2px 0 0;
+  width: 17px;
+  height: 17px;
+  accent-color: #d6bc82;
+  flex: none;
+  cursor: pointer;
+}
+
+#signin-start {
+  width: 100%;
+  padding: 13px 0;
+  border: none;
+  border-radius: 6px;
+  background: #d6bc82;
+  color: #23201a;
+  font: 600 15px system-ui, sans-serif;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+#signin-start:disabled {
+  opacity: 0.34;
+  cursor: not-allowed;
+}
+
+.signin-error {
+  margin: 12px 0 0;
+  text-align: center;
+  font-size: 12.5px;
+  color: #e8a2a2;
+}
+
+.signin-error.hidden { display: none; }
+
+#finish-button {
+  margin-top: 18px;
+  padding: 10px 20px;
+  border: 1px solid rgba(214, 188, 130, 0.5);
+  border-radius: 6px;
+  background: rgba(214, 188, 130, 0.14);
+  color: #f4e9cd;
+  font: 14px system-ui, sans-serif;
+  cursor: pointer;
+}
+
+#finish-button:hover { background: rgba(214, 188, 130, 0.26); }
+
+#finished-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(11, 13, 16, 0.92);
+  z-index: 9;
+  color: #f2efe6;
+  font: 15px system-ui, sans-serif;
+}
+
+#finished-overlay.hidden { display: none; }
+
+.finished-box {
+  width: min(440px, 88vw);
+  padding: 32px 38px;
+  text-align: center;
+  border: 1px solid rgba(214, 188, 130, 0.28);
+  border-radius: 10px;
+  background: rgba(11, 13, 16, 0.8);
+}
+
+.finished-box h2 {
+  margin: 0 0 14px;
+  font-size: 21px;
+  font-weight: 600;
+  color: #e8d9b5;
+}
+
+#finished-detail {
+  margin: 0 0 16px;
+  line-height: 1.6;
+}
+
+.finished-note {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: rgba(242, 239, 230, 0.55);
+}
+
+/* --- End-of-visit marker and questionnaire (Session 7) ------------------ */
+/* Shown once the sanctuary is reached so the walkthrough has a proper close
+   instead of simply stopping wherever the participant happens to be. */
+#end-hint {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  padding: 11px 20px;
+  border: 1px solid rgba(214, 188, 130, 0.45);
+  border-radius: 7px;
+  background: rgba(11, 13, 16, 0.78);
+  color: #f2efe6;
+  font: 14px system-ui, sans-serif;
+  white-space: nowrap;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+#end-hint.hidden { opacity: 0; }
+
+#end-hint strong { color: #e8d9b5; font-weight: 600; }
+
+#end-hint kbd {
+  padding: 1px 7px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.09);
+  font: inherit;
+  font-weight: 600;
+}
+
+#questionnaire-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+  overflow-y: auto;
+  padding: 40px 20px;
+  background: radial-gradient(circle at 50% 20%, #1a1a17, #0b0d10 70%);
+  color: #f2efe6;
+  font: 15px system-ui, sans-serif;
+}
+
+#questionnaire-overlay.hidden { display: none; }
+
+.questionnaire-box {
+  width: min(620px, 100%);
+  margin: 0 auto;
+  padding: 34px 38px 30px;
+  border: 1px solid rgba(214, 188, 130, 0.28);
+  border-radius: 10px;
+  background: rgba(11, 13, 16, 0.72);
+}
+
+.questionnaire-box h2 {
+  margin: 0 0 8px;
+  font-size: 22px;
+  font-weight: 600;
+  color: #e8d9b5;
+}
+
+.q-intro {
+  margin: 0 0 30px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: rgba(242, 239, 230, 0.55);
+}
+
+.q-block {
+  margin-bottom: 28px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.q-block:last-child { border-bottom: none; }
+
+.q-text {
+  margin: 0 0 14px;
+  line-height: 1.55;
+}
+
+.q-choices { display: flex; flex-wrap: wrap; gap: 9px; }
+
+.q-choice {
+  padding: 9px 17px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 6px;
+  background: transparent;
+  color: #f2efe6;
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.q-choice:hover { background: rgba(255, 255, 255, 0.07); }
+
+.q-choice.selected {
+  border-color: #d6bc82;
+  background: rgba(214, 188, 130, 0.18);
+  color: #f4e9cd;
+}
+
+.q-scale {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.q-scale-end {
+  font-size: 12.5px;
+  color: rgba(242, 239, 230, 0.45);
+  flex: none;
+}
+
+.q-scale-buttons { display: flex; gap: 7px; }
+
+.q-scale-btn {
+  width: 44px;
+  padding: 9px 0;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 6px;
+  background: transparent;
+  color: #f2efe6;
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.q-scale-btn:hover { background: rgba(255, 255, 255, 0.07); }
+
+.q-scale-btn.selected {
+  border-color: #d6bc82;
+  background: rgba(214, 188, 130, 0.18);
+  color: #f4e9cd;
+}
+
+.q-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #f2efe6;
+  font: inherit;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.q-textarea:focus { outline: none; border-color: #d6bc82; }
+
+#questionnaire-submit {
+  width: 100%;
+  margin-top: 8px;
+  padding: 14px 0;
+  border: none;
+  border-radius: 6px;
+  background: #d6bc82;
+  color: #23201a;
+  font: 600 15px system-ui, sans-serif;
+  cursor: pointer;
+}
+
+#questionnaire-submit:disabled { opacity: 0.5; cursor: default; }
