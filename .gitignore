@@ -1,0 +1,18 @@
+# Installed packages — Render runs `npm install` at build time.
+node_modules/
+
+# The walkthrough video is source material, not part of the game — 45 MB of
+# it would go into the repo and every clone for no runtime benefit.
+Temple of Horus.mp4
+
+# SketchUp export intermediates. assets/temple.glb is the file the game
+# actually loads; these two are just what it was converted from.
+assets.obj
+assets.mtl
+
+# Scratch folders
+New folder/
+Claude outputs/
+
+# Local env vars, if you ever run the server on your own machine.
+.env
