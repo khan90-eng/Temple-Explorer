@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Temple Explorer</title>
-  <link rel="stylesheet" href="style.css?v=12" />
+  <link rel="stylesheet" href="style.css?v=14" />
   <script type="importmap">
     {
       "imports": {
@@ -42,6 +42,12 @@
         <p class="field-note">Only used to match this walkthrough to your questionnaire.</p>
       </div>
 
+      <div class="field hidden" id="institution-field">
+        <label class="field-label" for="institution">Institution <span>(optional)</span></label>
+        <input id="institution" type="text" autocomplete="off" spellcheck="false"
+               placeholder="e.g. BUET" />
+      </div>
+
       <label class="consent">
         <input id="consent-check" type="checkbox" />
         <span>I agree that my movement and interaction inside this walkthrough
@@ -50,6 +56,15 @@
 
       <button type="button" id="signin-start" disabled>Begin</button>
       <p class="signin-error hidden" id="signin-error">Choose Student or Other, and tick the box.</p>
+    </div>
+  </div>
+
+  <!-- Skippable how-to-play video, shown once right after sign-in and
+       before "Click to enter" — same idea as a modern game's intro. -->
+  <div id="tutorial-overlay" class="hidden">
+    <div class="tutorial-box">
+      <video id="tutorial-video" src="assets/tutorial.mp4?v=1" playsinline></video>
+      <button type="button" id="tutorial-skip">Skip ▸</button>
     </div>
   </div>
 
@@ -70,9 +85,13 @@
 
   <div id="questionnaire-overlay" class="hidden">
     <div class="questionnaire-box">
+      <p class="paper-title">Beyond the Plan: Leveraging Browser-Based Interactive
+      Walkthroughs to Enhance Spatial Comprehension in Architectural History
+      Pedagogy</p>
       <h2>A few questions before you go</h2>
-      <p class="q-intro">Nine short questions, about two minutes. There are no
-      right answers, and you may leave any of them blank.</p>
+      <p class="q-intro">Twenty-two short questions, about five minutes. There
+      are no right answers, Section B is a self-test rather than a requirement,
+      and you may leave any question blank.</p>
       <div id="questionnaire-body"></div>
       <button type="button" id="questionnaire-submit">Submit and finish</button>
     </div>
@@ -93,10 +112,8 @@
 
   <div id="minimap-container">
     <canvas id="minimap"></canvas>
-    <div id="minimap-debug"></div>
   </div>
 
-  <div id="coord-readout"></div>
   <div id="placement-panel" class="hidden"></div>
   <div id="crosshair"></div>
 
@@ -105,6 +122,6 @@
     <div class="book-close-hint">Right-click to close</div>
   </div>
 
-  <script type="module" src="main.js?v=20"></script>
+  <script type="module" src="main.js?v=22"></script>
 </body>
 </html>

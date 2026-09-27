@@ -88,13 +88,15 @@ html, body {
   opacity: 0;
 }
 
+/* A translucent overlay rather than a solid panel, so it reads as part of
+   the view instead of a HUD box sitting on top of it (Provat, 27 Sep). */
 #minimap-container {
   position: fixed;
   top: 16px;
   right: 16px;
   z-index: 3;
-  background: rgba(11, 13, 16, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(11, 13, 16, 0.32);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 6px;
   padding: 6px;
   pointer-events: none;
@@ -102,34 +104,8 @@ html, body {
 
 #minimap {
   display: block;
-  height: 260px;
+  height: 340px;
   width: auto;
-}
-
-/* Temporary calibration readout — remove once the gate-gap is dialed in. */
-#minimap-debug {
-  margin-top: 4px;
-  font: 11px "Consolas", monospace;
-  color: #f2efe6;
-  text-align: center;
-  white-space: nowrap;
-}
-
-/* Temporary — live X/Y/Z so hotspot positions in content.js can be measured
-   in-game instead of guessed. Remove once all hotspots are placed. */
-#coord-readout {
-  position: fixed;
-  bottom: 8px;
-  left: 8px;
-  z-index: 3;
-  background: rgba(11, 13, 16, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 4px;
-  padding: 4px 8px;
-  color: #f2efe6;
-  font: 11px "Consolas", monospace;
-  white-space: nowrap;
-  pointer-events: none;
 }
 
 /* Temporary authoring tool — the panel for placement mode. Goes away with
@@ -346,7 +322,8 @@ html, body {
   color: #f4e9cd;
 }
 
-#student-id {
+#student-id,
+#institution {
   width: 100%;
   box-sizing: border-box;
   padding: 10px 12px;
@@ -357,7 +334,8 @@ html, body {
   font: inherit;
 }
 
-#student-id:focus {
+#student-id:focus,
+#institution:focus {
   outline: none;
   border-color: #d6bc82;
 }
@@ -525,11 +503,51 @@ html, body {
   color: #e8d9b5;
 }
 
+/* The paper's own title — Provat asked for it somewhere on this screen,
+   since this questionnaire is the paper's actual research instrument. */
+.paper-title {
+  margin: 0 0 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 13px;
+  font-style: italic;
+  line-height: 1.5;
+  color: rgba(242, 239, 230, 0.6);
+}
+
 .q-intro {
   margin: 0 0 30px;
   font-size: 13.5px;
   line-height: 1.6;
   color: rgba(242, 239, 230, 0.55);
+}
+
+/* Section dividers (A/B/C/D) matching the printed document's structure. */
+.q-section {
+  margin: 34px 0 18px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(214, 188, 130, 0.3);
+}
+
+.q-section:first-of-type {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.q-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #d6bc82;
+}
+
+.q-section-note {
+  margin-top: 5px;
+  font-size: 12.5px;
+  font-style: italic;
+  color: rgba(242, 239, 230, 0.5);
 }
 
 .q-block {
@@ -545,7 +563,33 @@ html, body {
   line-height: 1.55;
 }
 
+.q-note {
+  margin: -8px 0 12px;
+  font-size: 12.5px;
+  color: rgba(242, 239, 230, 0.45);
+}
+
 .q-choices { display: flex; flex-wrap: wrap; gap: 9px; }
+
+/* Shown under a choice/yesno row once its "Other (specify)" / "If yes"
+   option is picked — the same free-text look as the questionnaire's plain
+   textareas, just single-line. */
+.q-other-input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #f2efe6;
+  font: inherit;
+}
+
+.q-other-input:focus { outline: none; border-color: #d6bc82; }
+
+.q-other-input.hidden { display: none; }
 
 .q-choice {
   padding: 9px 17px;
@@ -643,3 +687,53 @@ html, body {
 
 #finished-download:hover { background: rgba(214, 188, 130, 0.26); }
 #finished-download.hidden { display: none; }
+
+/* --- Skippable how-to-play tutorial video (Session 8) -------------------
+   Shown once, right after sign-in and before "Click to enter" — the same
+   idea as a modern game's skippable intro. */
+#tutorial-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #050607;
+  transition: opacity 0.3s ease;
+}
+
+#tutorial-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.tutorial-box {
+  position: relative;
+  width: min(920px, 92vw);
+}
+
+#tutorial-video {
+  display: block;
+  width: 100%;
+  max-height: 82vh;
+  border-radius: 8px;
+  background: #000;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.6);
+}
+
+#tutorial-skip {
+  position: absolute;
+  top: -46px;
+  right: 0;
+  padding: 9px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  background: rgba(11, 13, 16, 0.6);
+  color: #f2efe6;
+  font: 14px system-ui, sans-serif;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+#tutorial-skip:hover { background: rgba(255, 255, 255, 0.12); }

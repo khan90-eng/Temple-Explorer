@@ -246,6 +246,7 @@ const CSV_COLUMNS = [
   ['started', (s) => s.session.startedAt],
   ['role', (s) => s.participant.role],
   ['student_id', (s) => s.participant.studentId || ''],
+  ['institution', (s) => s.participant.institution || ''],
   ['consented_at', (s) => s.participant.consentedAt],
   ['duration_s', (s) => s.session.durationSec],
   ['active_s', (s) => s.session.activeSec],
@@ -262,15 +263,38 @@ const CSV_COLUMNS = [
   ['hypostyle_s', (s) => s.zoneSeconds?.hypostyle],
   ['inner_court_s', (s) => s.zoneSeconds?.['inner-court']],
   ['sanctuary_s', (s) => s.zoneSeconds?.sanctuary],
-  ['seen_plan_before', (s) => s.questionnaire?.seen_plan_before],
-  ['visited_temple', (s) => s.questionnaire?.visited_temple],
-  ['understands_sequence', (s) => s.questionnaire?.understands_sequence],
-  ['light_mattered', (s) => s.questionnaire?.light_mattered],
-  ['torch_mattered', (s) => s.questionnaire?.torch_mattered],
-  ['plan_vs_walking', (s) => s.questionnaire?.plan_vs_walking],
-  ['movement_ease', (s) => s.questionnaire?.movement_ease],
-  ['beyond_the_plan', (s) => s.questionnaire?.beyond_the_plan],
-  ['comments', (s) => s.questionnaire?.comments],
+  // Section A. Background
+  ['screen_time', (s) => s.questionnaire?.screen_time],
+  ['screen_time_detail', (s) => s.questionnaire?.screen_time_detail],
+  ['game_frequency', (s) => s.questionnaire?.game_frequency],
+  ['used_vr', (s) => s.questionnaire?.used_vr],
+  ['used_3d_tool', (s) => s.questionnaire?.used_3d_tool],
+  ['history_engagement', (s) => joinIfArray(s.questionnaire?.history_engagement)],
+  ['interactive_effectiveness', (s) => s.questionnaire?.interactive_effectiveness],
+  // Section B. Spatial Knowledge Check (optional)
+  ['spatial_sequence', (s) => s.questionnaire?.spatial_sequence],
+  ['spatial_sequence_detail', (s) => s.questionnaire?.spatial_sequence_detail],
+  ['hypostyle_columns', (s) => s.questionnaire?.hypostyle_columns],
+  ['light_change', (s) => s.questionnaire?.light_change],
+  ['capital_types', (s) => s.questionnaire?.capital_types],
+  ['sanctuary_function', (s) => s.questionnaire?.sanctuary_function],
+  // Section C. Experience with the walkthrough
+  ['engaging', (s) => s.questionnaire?.engaging],
+  ['historical_understanding', (s) => s.questionnaire?.historical_understanding],
+  ['ease_of_navigation', (s) => s.questionnaire?.ease_of_navigation],
+  ['pace_vs_video', (s) => s.questionnaire?.pace_vs_video],
+  ['emotional_connection', (s) => s.questionnaire?.emotional_connection],
+  ['curiosity', (s) => s.questionnaire?.curiosity],
+  ['retention_vs_traditional', (s) => s.questionnaire?.retention_vs_traditional],
+  ['favorite_feature', (s) => s.questionnaire?.favorite_feature],
+  ['favorite_feature_detail', (s) => s.questionnaire?.favorite_feature_detail],
+  ['motivation_to_explore', (s) => s.questionnaire?.motivation_to_explore],
+  ['technical_difficulties', (s) => s.questionnaire?.technical_difficulties],
+  ['technical_difficulties_detail', (s) => s.questionnaire?.technical_difficulties_detail],
+  ['device_used', (s) => s.questionnaire?.device_used],
+  ['device_used_detail', (s) => s.questionnaire?.device_used_detail],
+  // Section D. Open-ended feedback
+  ['suggestions', (s) => s.questionnaire?.suggestions],
   ['fps_avg', (s) => s.device?.fpsAvg],
   ['fps_min', (s) => s.device?.fpsMin],
   ['screen', (s) => s.device?.screen],
@@ -281,6 +305,13 @@ function csvCell(value) {
   if (value === null || value === undefined) return '';
   const text = String(value);
   return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+// history_engagement (Q5) is the one multi-select question, so its answer is
+// an array rather than a single string — flatten it to one cell so the CSV
+// stays one row per session.
+function joinIfArray(value) {
+  return Array.isArray(value) ? value.join('; ') : value;
 }
 
 app.get('/api/export.csv', requireAdmin, async (req, res) => {
@@ -309,7 +340,7 @@ app.use(
       // let browsers keep them. index.html must not be cached or a deploy
       // would not reach anyone.
       if (filePath.endsWith('index.html')) res.setHeader('Cache-Control', 'no-cache');
-      else if (/\.(glb|webp|png|jpg)$/.test(filePath)) {
+      else if (/\.(glb|webp|png|jpg|mp4)$/.test(filePath)) {
         res.setHeader('Cache-Control', 'public, max-age=604800');
       }
     },

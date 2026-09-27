@@ -28,7 +28,7 @@ import { Sky } from 'three/addons/objects/Sky.js';
 import Stats from 'three/addons/libs/stats.module.js';
 import { hotspots } from './content.js?v=5';
 import { study } from './study.js?v=2';
-import { renderQuestionnaire } from './questionnaire.js?v=1';
+import { renderQuestionnaire } from './questionnaire.js?v=2';
 
 const canvas = document.getElementById('app');
 
@@ -341,9 +341,14 @@ const ROOF_CHECK_DISTANCE = 25; // m — "is there a ceiling close overhead?"
 const signinOverlay = document.getElementById('signin-overlay');
 const studentIdField = document.getElementById('student-id-field');
 const studentIdInput = document.getElementById('student-id');
+const institutionField = document.getElementById('institution-field');
+const institutionInput = document.getElementById('institution');
 const consentCheck = document.getElementById('consent-check');
 const signinStart = document.getElementById('signin-start');
 const signinError = document.getElementById('signin-error');
+const tutorialOverlay = document.getElementById('tutorial-overlay');
+const tutorialVideo = document.getElementById('tutorial-video');
+const tutorialSkip = document.getElementById('tutorial-skip');
 const enterOverlay = document.getElementById('enter-overlay');
 const finishButton = document.getElementById('finish-button');
 const finishedOverlay = document.getElementById('finished-overlay');
@@ -365,6 +370,7 @@ for (const button of document.querySelectorAll('.role-btn')) {
       other.classList.toggle('selected', other === button);
     }
     studentIdField.classList.toggle('hidden', chosenRole !== 'student');
+    institutionField.classList.toggle('hidden', chosenRole !== 'student');
     refreshSigninState();
   });
 }
@@ -386,13 +392,31 @@ signinStart.addEventListener('click', () => {
   study.begin({
     role: chosenRole,
     studentId: chosenRole === 'student' ? studentIdInput.value.trim() : '',
+    institution: chosenRole === 'student' ? institutionInput.value.trim() : '',
     consentedAt: new Date().toISOString(),
     consentText: CONSENT_TEXT,
   });
 
   signinOverlay.classList.add('hidden');
-  enterOverlay.classList.remove('hidden');
+  tutorialOverlay.classList.remove('hidden');
+  // play() is called synchronously inside this click handler (the same
+  // user-gesture chain as the Begin button), so the browser allows it to
+  // start with sound rather than blocking it as unsolicited autoplay.
+  tutorialVideo.currentTime = 0;
+  tutorialVideo.play().catch(() => {});
 });
+
+// Skippable, modern-game-style intro: ends on its own once the video plays
+// through, or immediately if the participant presses Skip. Either way it
+// hands off to the same "Click to enter" screen that used to follow sign-in
+// directly.
+function advanceFromTutorial() {
+  tutorialVideo.pause();
+  tutorialOverlay.classList.add('hidden');
+  enterOverlay.classList.remove('hidden');
+}
+tutorialSkip.addEventListener('click', advanceFromTutorial);
+tutorialVideo.addEventListener('ended', advanceFromTutorial);
 
 enterOverlay.addEventListener('click', (e) => {
   // The Finish button lives inside this overlay; clicking it must not also
@@ -678,14 +702,6 @@ let spawnPoint = new THREE.Vector3(0, 0, 30);
 // model's own bounding box corners (set once temple.glb finishes loading).
 const minimapCanvas = document.getElementById('minimap');
 const minimapCtx = minimapCanvas.getContext('2d');
-// Temporary calibration readout, visible on-screen — the "5 m in front of
-// the gate" gap turned out to be too small a fraction of the temple's
-// ~140-237 m length to ever show up just by adding more blank margin (the
-// margin fraction and the 5 m gap are both scaled by the same huge span,
-// so they shrink together). This prints the real numbers so the actual
-// fix can be calibrated from data instead of guessing again. Remove once
-// the gap looks right.
-const minimapDebug = document.getElementById('minimap-debug');
 const planImage = new Image();
 let planImageLoaded = false;
 planImage.onload = () => {
@@ -730,10 +746,10 @@ function updateMinimap() {
   if (!planImageLoaded || !templeModel) return;
 
   minimapCtx.clearRect(0, 0, minimapCanvas.width, minimapCanvas.height);
-  // A little see-through so the map reads as an overlay rather than a
-  // solid tile sitting on the view; the dot and cone stay fully opaque
-  // below so the player's position is never hard to pick out.
-  minimapCtx.globalAlpha = 0.72;
+  // Faded so the map reads as a translucent overlay on top of the view
+  // rather than a solid tile; the dot and cone stay fully opaque below so
+  // the player's position is never hard to pick out.
+  minimapCtx.globalAlpha = 0.55;
   minimapCtx.drawImage(planImage, 0, 0, minimapCanvas.width, minimapCanvas.height);
   minimapCtx.globalAlpha = 1;
 
@@ -747,11 +763,6 @@ function updateMinimap() {
   const v = THREE.MathUtils.clamp(MAP_SPAWN_V + dz * MAP_V_PER_METRE, 0, 1);
   const px = u * minimapCanvas.width;
   const py = v * minimapCanvas.height;
-
-  // On-screen calibration readout: how far, in world metres, the player has
-  // moved from the spawn point along each axis. Read this at the far
-  // sanctuary wall to pin the travel scale exactly. Remove once dialed in.
-  minimapDebug.textContent = `moved  X ${dx.toFixed(0)}  Z ${dz.toFixed(0)}`;
 
   camera.getWorldDirection(playerDirection);
   const heading = Math.atan2(playerDirection.z, playerDirection.x);
@@ -1103,12 +1114,10 @@ function updateHotspots(elapsedTime) {
 
   let nearest = null;
   let nearestDistSq = Infinity;
-  nearestMarkerDistance = Infinity;
 
   for (const marker of hotspotMarkers) {
     const toMarker = marker.sprite.position.clone().sub(camera.position);
     const distance = toMarker.length();
-    if (distance < nearestMarkerDistance) nearestMarkerDistance = distance;
 
     // Gentle pulse so the markers read as "alive" rather than static dots,
     // echoing the torch flame's own flicker elsewhere in this scene.
@@ -1210,31 +1219,6 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// --- Live coordinate readout (Session 6 calibration aid) ------------------
-// Same idea as the minimap's temporary debug line in Session 5: print the
-// player's position so each hotspot's placeholder offset in content.js can
-// be walked-to and measured exactly, instead of guessed. Deliberately prints
-// the position as an OFFSET FROM SPAWN, in the exact same x/y/z convention
-// content.js uses, so a reading can be pasted straight across with no
-// conversion. Also prints how far the nearest marker is, which is the quick
-// way to tell "no marker in range" apart from "markers aren't working".
-// Remove all of this once every hotspot has a confirmed real position.
-const coordReadout = document.getElementById('coord-readout');
-let nearestMarkerDistance = Infinity;
-
-function updateCoordReadout() {
-  const dx = camera.position.x - spawnPoint.x;
-  const dy = camera.position.y - spawnPoint.y;
-  const dz = camera.position.z - spawnPoint.z;
-
-  const nearestText =
-    nearestMarkerDistance === Infinity ? '—' : `${nearestMarkerDistance.toFixed(0)} m`;
-
-  coordReadout.textContent =
-    `offset  x ${dx.toFixed(1)}  y ${dy.toFixed(1)}  z ${dz.toFixed(1)}` +
-    `   ·   markers ${hotspotMarkers.length}` +
-    `   ·   nearest ${nearestText}`;
-}
 
 // --- Torch behavior: auto on/off + flicker --------------------------------
 function updateTorch() {
@@ -1461,7 +1445,6 @@ renderer.setAnimationLoop(() => {
   updateMinimap();
   updateHotspots(clock.elapsedTime);
   updatePlacementMode();
-  updateCoordReadout();
 
   // Only count time the participant is actually in the temple — not time
   // spent sitting on the pause screen with the pointer unlocked.
