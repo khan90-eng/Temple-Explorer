@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Temple Explorer — Session Data</title>
+<style>
+  :root { color-scheme: dark; }
+  html, body {
+    margin: 0; padding: 0;
+    background: #0b0d10;
+    color: #f2efe6;
+    font: 14px system-ui, sans-serif;
+  }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 28px 20px 60px; }
+  h1 {
+    font-size: 21px; font-weight: 600; color: #e8d9b5;
+    margin: 0 0 4px;
+  }
+  .sub { color: rgba(242,239,230,0.5); font-size: 13px; margin: 0 0 22px; }
+
+  /* --- Token gate --- */
+  #gate {
+    border: 1px solid rgba(214,188,130,0.28);
+    border-radius: 10px;
+    background: rgba(255,255,255,0.03);
+    padding: 20px 22px;
+    max-width: 480px;
+  }
+  #gate label { display:block; font-size: 13px; color: rgba(242,239,230,0.7); margin-bottom: 8px; }
+  #gate input[type=password], #gate input[type=text] {
+    width: 100%; box-sizing: border-box; padding: 10px 12px;
+    border: 1px solid rgba(255,255,255,0.22); border-radius: 6px;
+    background: rgba(255,255,255,0.05); color: #f2efe6; font: inherit;
+  }
+  #gate button {
+    margin-top: 12px; padding: 10px 18px; border: none; border-radius: 6px;
+    background: #d6bc82; color: #23201a; font: 600 14px system-ui, sans-serif; cursor: pointer;
+  }
+  #gate .err { color: #e8a2a2; font-size: 12.5px; margin-top: 10px; }
+  #gate .hint { color: rgba(242,239,230,0.4); font-size: 12px; margin-top: 10px; line-height: 1.5; }
+
+  /* --- Toolbar --- */
+  #toolbar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+    margin-bottom: 18px;
+  }
+  #toolbar .stat {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px;
+    padding: 7px 13px;
+    font-size: 12.5px;
+    color: rgba(242,239,230,0.75);
+  }
+  #toolbar .stat b { color: #e8d9b5; font-weight: 600; }
+  #toolbar input[type=search] {
+    flex: 1; min-width: 180px;
+    padding: 8px 12px; border: 1px solid rgba(255,255,255,0.22); border-radius: 6px;
+    background: rgba(255,255,255,0.05); color: #f2efe6; font: inherit;
+  }
+  .btn {
+    padding: 8px 14px; border: 1px solid rgba(214,188,130,0.5); border-radius: 6px;
+    background: rgba(214,188,130,0.14); color: #f4e9cd; font: 13px system-ui, sans-serif;
+    cursor: pointer; text-decoration: none; display: inline-block;
+  }
+  .btn:hover { background: rgba(214,188,130,0.26); }
+  .btn.ghost { border-color: rgba(255,255,255,0.2); background: transparent; color: rgba(242,239,230,0.7); }
+
+  /* --- Table --- */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    text-align: left; padding: 9px 10px; color: rgba(242,239,230,0.55);
+    font-weight: 600; font-size: 11.5px; letter-spacing: 0.04em; text-transform: uppercase;
+    border-bottom: 1px solid rgba(255,255,255,0.12);
+    white-space: nowrap;
+  }
+  tbody td {
+    padding: 9px 10px; border-bottom: 1px solid rgba(255,255,255,0.06);
+    white-space: nowrap;
+  }
+  tbody tr:hover { background: rgba(255,255,255,0.03); }
+  .ok { color: #9be89b; }
+  .muted { color: rgba(242,239,230,0.4); }
+  .rowbtn {
+    padding: 5px 11px; border: 1px solid rgba(255,255,255,0.2); border-radius: 5px;
+    background: transparent; color: #f2efe6; font: 12px system-ui, sans-serif; cursor: pointer;
+  }
+  .rowbtn:hover { background: rgba(255,255,255,0.08); }
+  #empty { padding: 40px 0; text-align: center; color: rgba(242,239,230,0.4); }
+
+  /* --- Details modal --- */
+  #modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 20;
+  }
+  #modal-backdrop.hidden { display: none; }
+  #modal {
+    width: min(640px, 92vw); max-height: 84vh; overflow-y: auto;
+    background: #12141a; border: 1px solid rgba(214,188,130,0.3); border-radius: 10px;
+    padding: 24px 26px;
+  }
+  #modal h2 { margin: 0 0 4px; font-size: 17px; color: #e8d9b5; }
+  #modal .meta { font-size: 12px; color: rgba(242,239,230,0.5); margin-bottom: 18px; }
+  #modal .qa { padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.07); }
+  #modal .qa .q { font-size: 12px; color: rgba(242,239,230,0.55); margin-bottom: 3px; }
+  #modal .qa .a { font-size: 13.5px; }
+  #modal .close {
+    float: right; background: none; border: none; color: rgba(242,239,230,0.6);
+    font-size: 20px; cursor: pointer; line-height: 1;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Temple Explorer — Session Data</h1>
+  <p class="sub">Every walkthrough session and questionnaire, straight from the server.</p>
+
+  <div id="gate">
+    <label for="token-input">Admin token</label>
+    <input id="token-input" type="password" autocomplete="off" placeholder="Paste your ADMIN_TOKEN" />
+    <button id="load-btn" type="button">Load sessions</button>
+    <div class="err hidden" id="gate-err"></div>
+    <p class="hint">This is the same token you set as ADMIN_TOKEN on Render. It's remembered
+    only in this browser (never sent anywhere but this site) — use "Forget token" below on a
+    shared computer.</p>
+  </div>
+
+  <div id="app" class="hidden">
+    <div id="toolbar">
+      <span class="stat"><b id="stat-count">0</b> sessions</span>
+      <span class="stat"><b id="stat-sanctuary">0</b> reached sanctuary</span>
+      <span class="stat"><b id="stat-minutes">0</b> avg minutes</span>
+      <input type="search" id="filter" placeholder="Filter by student ID, institution, role…" />
+      <button class="btn" id="refresh-btn" type="button">Refresh</button>
+      <a class="btn" id="csv-link" href="#">Download CSV</a>
+      <a class="btn ghost" id="json-link" href="#">Full JSON</a>
+      <button class="btn ghost" id="forget-btn" type="button">Forget token</button>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Received</th>
+          <th>Role</th>
+          <th>Student ID</th>
+          <th>Institution</th>
+          <th>Minutes</th>
+          <th>Walked (m)</th>
+          <th>Sanctuary</th>
+          <th>Scrolls</th>
+          <th>FPS</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div id="empty" class="hidden">No sessions match.</div>
+  </div>
+</div>
+
+<div id="modal-backdrop" class="hidden">
+  <div id="modal">
+    <button class="close" id="modal-close" type="button">&times;</button>
+    <h2 id="modal-title">Session</h2>
+    <div class="meta" id="modal-meta"></div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+// Question id -> short label, kept in sync by hand with questionnaire.js.
+// Only used to make the details view readable; the raw id/value is what's
+// actually stored, this is just a display label.
+const LABELS = {
+  screen_time: 'Daily screen time',
+  screen_time_detail: 'Screen time — specified',
+  game_frequency: 'Plays video games',
+  used_vr: 'Used VR before',
+  used_3d_tool: 'Used a 3D/walkthrough tool before',
+  history_engagement: 'How they engage with history',
+  interactive_effectiveness: 'Interactive exploration as a learning tool',
+  spatial_sequence: 'Temple sequence (knowledge check)',
+  spatial_sequence_detail: 'Temple sequence — specified',
+  hypostyle_columns: 'Columns in the outer hypostyle hall',
+  light_change: 'Light change toward the sanctuary',
+  capital_types: 'Column capital types',
+  sanctuary_function: "Sanctuary's function",
+  engaging: 'How engaging',
+  historical_understanding: 'Helped historical understanding',
+  ease_of_navigation: 'Ease of navigation',
+  pace_vs_video: 'Own pace vs. a fixed video',
+  emotional_connection: 'Emotional connection',
+  curiosity: 'Sparked curiosity',
+  retention_vs_traditional: 'Retention vs. traditional methods',
+  favorite_feature: 'Favorite feature',
+  favorite_feature_detail: 'Favorite feature — specified',
+  motivation_to_explore: 'Motivated to explore more',
+  technical_difficulties: 'Technical difficulties',
+  technical_difficulties_detail: 'Technical difficulties — details',
+  device_used: 'Device used',
+  device_used_detail: 'Device used — specified',
+  suggestions: 'Suggestions',
+};
+
+const TOKEN_KEY = 'te_admin_token';
+let sessions = [];
+
+const gate = document.getElementById('gate');
+const app = document.getElementById('app');
+const tokenInput = document.getElementById('token-input');
+const loadBtn = document.getElementById('load-btn');
+const gateErr = document.getElementById('gate-err');
+const rowsEl = document.getElementById('rows');
+const emptyEl = document.getElementById('empty');
+const filterEl = document.getElementById('filter');
+const refreshBtn = document.getElementById('refresh-btn');
+const forgetBtn = document.getElementById('forget-btn');
+const csvLink = document.getElementById('csv-link');
+const jsonLink = document.getElementById('json-link');
+
+function getToken() {
+  return localStorage.getItem(TOKEN_KEY) || '';
+}
+
+async function loadSessions() {
+  const token = getToken();
+  gateErr.classList.add('hidden');
+  try {
+    const res = await fetch(`/api/sessions?limit=1000&token=${encodeURIComponent(token)}`);
+    if (res.status === 401) {
+      gateErr.textContent = 'That token was rejected — check it against Render’s Environment tab.';
+      gateErr.classList.remove('hidden');
+      localStorage.removeItem(TOKEN_KEY);
+      gate.classList.remove('hidden');
+      app.classList.add('hidden');
+      return;
+    }
+    if (!res.ok) throw new Error(`server said ${res.status}`);
+    const body = await res.json();
+    sessions = body.sessions || [];
+    csvLink.href = `/api/export.csv?token=${encodeURIComponent(token)}`;
+    jsonLink.href = `/api/export.json?token=${encodeURIComponent(token)}`;
+    gate.classList.add('hidden');
+    app.classList.remove('hidden');
+    render();
+  } catch (error) {
+    gateErr.textContent = `Could not load sessions (${error.message}). Try Refresh.`;
+    gateErr.classList.remove('hidden');
+  }
+}
+
+function render() {
+  const q = filterEl.value.trim().toLowerCase();
+  const filtered = q
+    ? sessions.filter((s) =>
+        [s.studentId, s.institution, s.role, s.id].some((v) =>
+          String(v || '').toLowerCase().includes(q)
+        )
+      )
+    : sessions;
+
+  document.getElementById('stat-count').textContent = sessions.length;
+  document.getElementById('stat-sanctuary').textContent =
+    sessions.filter((s) => s.reachedSanctuary).length;
+  const avgMin = sessions.length
+    ? (sessions.reduce((sum, s) => sum + (s.activeSec || 0), 0) / sessions.length / 60).toFixed(1)
+    : '0';
+  document.getElementById('stat-minutes').textContent = avgMin;
+
+  rowsEl.innerHTML = '';
+  emptyEl.classList.toggle('hidden', filtered.length > 0);
+
+  for (const s of filtered) {
+    const tr = document.createElement('tr');
+    const minutes = s.activeSec ? (s.activeSec / 60).toFixed(1) : '0';
+    const when = s.receivedAt ? new Date(s.receivedAt).toLocaleString() : '—';
+    tr.innerHTML = `
+      <td>${when}</td>
+      <td>${escapeHtml(s.role || '—')}</td>
+      <td>${escapeHtml(s.studentId || '—')}</td>
+      <td>${escapeHtml(s.institution || '—')}</td>
+      <td>${minutes}</td>
+      <td>${s.distanceWalkedM ?? '—'}</td>
+      <td>${s.reachedSanctuary ? '<span class="ok">yes</span>' : '<span class="muted">no</span>'}</td>
+      <td>${s.uniqueScrollsOpened ?? '—'} / ${s.scrollsOpened ?? '—'}</td>
+      <td>${s.fpsAvg ?? '—'}</td>
+      <td><button class="rowbtn" data-id="${s.id}">Details</button></td>
+    `;
+    rowsEl.appendChild(tr);
+  }
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+rowsEl.addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-id]');
+  if (!btn) return;
+  const session = sessions.find((s) => s.id === btn.dataset.id);
+  if (session) openModal(session);
+});
+
+const modalBackdrop = document.getElementById('modal-backdrop');
+const modalTitle = document.getElementById('modal-title');
+const modalMeta = document.getElementById('modal-meta');
+const modalBody = document.getElementById('modal-body');
+
+function openModal(s) {
+  modalTitle.textContent = `${s.role === 'student' ? 'Student' : 'Participant'} ${s.studentId || ''}`.trim();
+  const minutes = s.activeSec ? (s.activeSec / 60).toFixed(1) : '0';
+  modalMeta.textContent =
+    `${s.institution ? s.institution + ' · ' : ''}${minutes} min · ` +
+    `${s.distanceWalkedM ?? '?'} m walked · ${s.reachedSanctuary ? 'reached sanctuary' : 'did not reach sanctuary'}`;
+
+  modalBody.innerHTML = '';
+  const answers = s.questionnaire || {};
+  const ids = Object.keys(answers);
+  if (ids.length === 0) {
+    modalBody.innerHTML = '<p class="muted">No questionnaire answers recorded.</p>';
+  } else {
+    for (const id of ids) {
+      const value = answers[id];
+      if (value === null || value === undefined || value === '') continue;
+      const row = document.createElement('div');
+      row.className = 'qa';
+      const label = LABELS[id] || id;
+      const shown = Array.isArray(value) ? value.join(', ') : String(value);
+      row.innerHTML = `<div class="q">${escapeHtml(label)}</div><div class="a">${escapeHtml(shown)}</div>`;
+      modalBody.appendChild(row);
+    }
+  }
+  modalBackdrop.classList.remove('hidden');
+}
+
+document.getElementById('modal-close').addEventListener('click', () => modalBackdrop.classList.add('hidden'));
+modalBackdrop.addEventListener('click', (e) => {
+  if (e.target === modalBackdrop) modalBackdrop.classList.add('hidden');
+});
+
+loadBtn.addEventListener('click', () => {
+  const value = tokenInput.value.trim();
+  if (!value) return;
+  localStorage.setItem(TOKEN_KEY, value);
+  loadSessions();
+});
+tokenInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') loadBtn.click(); });
+
+refreshBtn.addEventListener('click', loadSessions);
+filterEl.addEventListener('input', render);
+forgetBtn.addEventListener('click', () => {
+  localStorage.removeItem(TOKEN_KEY);
+  app.classList.add('hidden');
+  gate.classList.remove('hidden');
+  tokenInput.value = '';
+});
+
+// Auto-load if a token is already remembered on this device.
+if (getToken()) loadSessions();
+</script>
+</body>
+</html>

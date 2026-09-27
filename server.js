@@ -215,6 +215,7 @@ app.get('/api/sessions', requireAdmin, async (req, res) => {
         receivedAt: s.receivedAt,
         role: s.participant.role,
         studentId: s.participant.studentId || '',
+        institution: s.participant.institution || '',
         activeSec: s.session.activeSec,
         endReason: s.session.endReason,
         ...s.summary,
