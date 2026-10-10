@@ -2,9 +2,23 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#0b0d10" />
+  <!-- Decides touch vs mouse-and-keyboard before anything is drawn, so the
+       page never flashes the wrong layout. ?touch=1 / ?touch=0 override it
+       (useful for testing the phone layout on a laptop). -->
+  <script>
+    (function () {
+      var q = new URLSearchParams(location.search).get('touch');
+      var touch = q === '1' ? true : q === '0' ? false :
+        (window.matchMedia('(pointer: coarse)').matches && navigator.maxTouchPoints > 0);
+      if (touch) document.documentElement.classList.add('touch');
+    })();
+  </script>
   <title>Temple Explorer</title>
-  <link rel="stylesheet" href="style.css?v=14" />
+  <link rel="stylesheet" href="style.css?v=15" />
   <script type="importmap">
     {
       "imports": {
@@ -70,8 +84,9 @@
 
   <div id="enter-overlay" class="hidden">
     <div class="enter-box">
-      <p><strong>Click to enter</strong></p>
-      <p>W A S D or arrow keys to walk · mouse to look · Shift to run · Space to jump · E to light/put out torch · Esc to pause</p>
+      <p><strong class="desk-only">Click to enter</strong><strong class="touch-only">Tap to enter</strong></p>
+      <p class="desk-only">W A S D or arrow keys to walk · mouse to look · Shift to run · Space to jump · E to light/put out torch · Esc to pause</p>
+      <p class="touch-only">Left thumb: walk · Drag on the right side: look around · Tap a white dot to read it · Buttons: Jump, Run and Torch · II to pause</p>
       <button type="button" id="finish-button">Finish and save my session</button>
     </div>
   </div>
@@ -80,7 +95,8 @@
        rather than stopping wherever the participant happens to be. -->
   <div id="end-hint" class="hidden">
     <strong>You have reached the sanctuary.</strong>
-    Press <kbd>F</kbd> to end your visit — or keep exploring.
+    <span class="desk-only">Press <kbd>F</kbd> to end your visit — or keep exploring.</span>
+    <span class="touch-only">Keep exploring, or <button type="button" id="end-visit-btn">End my visit</button></span>
   </div>
 
   <div id="questionnaire-overlay" class="hidden">
@@ -119,9 +135,32 @@
 
   <div id="info-book" class="hidden">
     <img id="info-book-page" alt="" />
-    <div class="book-close-hint">Right-click to close</div>
+    <div class="book-close-hint"><span class="desk-only">Right-click to close</span><span class="touch-only">Swipe to scroll · tap the page for more info · tap ✕ to close</span></div>
+  </div>
+  <button type="button" id="book-close" class="hidden" aria-label="Close">✕</button>
+
+  <!-- Phone and tablet controls. Hidden unless <html> has the touch class and
+       the participant is inside the temple. -->
+  <div id="touch-ui">
+    <div id="touch-left" class="touch-zone"></div>
+    <div id="touch-right" class="touch-zone"></div>
+    <div id="joy-base"><div id="joy-knob"></div></div>
+    <button type="button" id="touch-pause" class="touch-btn" aria-label="Pause">II</button>
+    <div id="touch-buttons">
+      <button type="button" id="btn-torch" class="touch-btn">Torch</button>
+      <button type="button" id="btn-run" class="touch-btn">Run</button>
+      <button type="button" id="btn-jump" class="touch-btn big">Jump</button>
+    </div>
   </div>
 
-  <script type="module" src="main.js?v=22"></script>
+  <div id="rotate-overlay">
+    <div class="rotate-box">
+      <div class="rotate-icon"></div>
+      <p><strong>Please turn your phone sideways</strong></p>
+      <p>The walkthrough works in landscape.</p>
+    </div>
+  </div>
+
+  <script type="module" src="main.js?v=23"></script>
 </body>
 </html>

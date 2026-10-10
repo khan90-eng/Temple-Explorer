@@ -27,8 +27,12 @@ import { Capsule } from 'three/addons/math/Capsule.js';
 import { Sky } from 'three/addons/objects/Sky.js';
 import Stats from 'three/addons/libs/stats.module.js';
 import { hotspots } from './content.js?v=5';
-import { study } from './study.js?v=2';
+import { study } from './study.js?v=3';
 import { renderQuestionnaire } from './questionnaire.js?v=2';
+import { IS_TOUCH, touchState, initTouch, resetTouch } from './touch.js?v=1';
+
+// Recorded on every session so phone and PC runs can be told apart in the data.
+study.inputMode = IS_TOUCH ? 'touch' : 'mouse-keyboard';
 
 const canvas = document.getElementById('app');
 
@@ -42,19 +46,24 @@ const WALK_SPEED = 3.0; // m/s
 const RUN_SPEED = 6.0; // m/s
 const CAPSULE_RADIUS = 0.35; // m, roughly shoulder-width
 const GRAVITY = 30; // m/s^2
-const STEPS_PER_FRAME = 5; // physics substeps for stable collision at low fps
+// Phones get fewer physics substeps (and the lighter renderer settings below):
+// same movement, less CPU per frame.
+const STEPS_PER_FRAME = IS_TOUCH ? 3 : 5; // physics substeps for stable collision at low fps
 // Egyptian temples like Edfu step the floor UP toward the sanctuary in
 // stages, so a small hop is the practical way past a ledge rather than
 // something we special-case per level change.
 const JUMP_VELOCITY = 8.5; // m/s upward impulse, ~1.2 m apex
 
 // --- Renderer ---------------------------------------------------------
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+// On phones: no antialiasing, a capped pixel ratio and cheaper shadow filtering.
+// The sun and its real shadows stay, since the light gradient is the paper's
+// argument; only how smoothly they are filtered is reduced.
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: !IS_TOUCH });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, IS_TOUCH ? 1.25 : 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setClearColor(0x0b0d10);
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = IS_TOUCH ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
 
 // --- Scene --------------------------------------------------------------
 const scene = new THREE.Scene();
@@ -172,6 +181,20 @@ const camera = new THREE.PerspectiveCamera(
 );
 
 const controls = new PointerLockControls(camera, renderer.domElement);
+
+// "Is the participant inside the temple right now?" On a PC that means the
+// mouse pointer is locked. A phone has no pointer lock, so touchPlaying stands
+// in for it: true between tapping "Tap to enter" and pausing/finishing.
+let touchPlaying = false;
+let lastPauseAt = 0; // see the ghost-click guard in the enter overlay's click handler
+function isActive() {
+  return IS_TOUCH ? touchPlaying : controls.isLocked;
+}
+
+// Phones run the expensive raycasts (against the 176k-triangle model) every
+// few frames and reuse the last answer in between; a PC checks every frame.
+const RAY_EVERY = IS_TOUCH ? 6 : 1;
+let frameCount = 0;
 
 // The camera itself needs to be part of the scene graph for anything
 // parented to it (the torch, below) to actually render.
@@ -398,6 +421,16 @@ signinStart.addEventListener('click', () => {
   });
 
   signinOverlay.classList.add('hidden');
+
+  // The how-to-play video shows keyboard-and-mouse controls, which would
+  // mislead someone on a phone, so touch users go straight to the entry
+  // screen, which lists the touch controls in words.
+  if (IS_TOUCH) {
+    document.documentElement.classList.add('needs-landscape');
+    enterOverlay.classList.remove('hidden');
+    return;
+  }
+
   tutorialOverlay.classList.remove('hidden');
   // play() is called synchronously inside this click handler (the same
   // user-gesture chain as the Begin button), so the browser allows it to
@@ -422,7 +455,52 @@ enterOverlay.addEventListener('click', (e) => {
   // The Finish button lives inside this overlay; clicking it must not also
   // re-lock the pointer and drop the participant back into the temple.
   if (e.target.closest('#finish-button')) return;
-  controls.lock();
+  // The finger that just pressed Pause is still coming up. Browsers can send
+  // that touch's click to whatever now sits under it, which is this overlay,
+  // and that would resume play the instant it paused.
+  if (IS_TOUCH && performance.now() - lastPauseAt < 600) return;
+  if (IS_TOUCH) startTouchPlay();
+  else controls.lock();
+});
+
+// --- Touch: enter / pause -------------------------------------------------
+function tryFullscreenLandscape() {
+  // Android Chrome: fullscreen hides the browser bars and lets us lock the
+  // screen to landscape. iPhone Safari offers neither, so there the rotate
+  // overlay and 100dvh layout do the job.
+  try {
+    const el = document.documentElement;
+    const request = el.requestFullscreen || el.webkitRequestFullscreen;
+    if (request && !document.fullscreenElement && !document.webkitFullscreenElement) {
+      Promise.resolve(request.call(el, { navigationUI: 'hide' }))
+        .then(() => (screen.orientation && screen.orientation.lock
+          ? screen.orientation.lock('landscape') : null))
+        .catch(() => {});
+    }
+  } catch (error) { /* fullscreen is a nicety, never a requirement */ }
+}
+
+function startTouchPlay() {
+  touchPlaying = true;
+  enterOverlay.classList.add('hidden');
+  document.documentElement.classList.add('playing');
+  tryFullscreenLandscape();
+}
+
+function pauseTouchPlay() {
+  if (!touchPlaying) return;
+  if (bookOpen) closeBook(); // never leave a scroll open behind the pause screen
+  lastPauseAt = performance.now();
+  touchPlaying = false;
+  resetTouch();
+  document.documentElement.classList.remove('playing');
+  if (!study.active || questionnaireOpen) return;
+  enterOverlay.classList.remove('hidden');
+}
+
+// Leaving the tab or locking the phone pauses, like Esc does on a PC.
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) pauseTouchPlay();
 });
 
 controls.addEventListener('lock', () => enterOverlay.classList.add('hidden'));
@@ -450,7 +528,7 @@ let collectAnswers = null;
 function updateEndPrompt(offset) {
   if (!study.active) return;
   if (!reachedSanctuary && offset.z <= -155) reachedSanctuary = true;
-  const show = reachedSanctuary && controls.isLocked && !bookOpen;
+  const show = reachedSanctuary && isActive() && !bookOpen;
   endHint.classList.toggle('hidden', !show);
 }
 
@@ -458,6 +536,10 @@ function openQuestionnaire() {
   if (questionnaireOpen || !study.active) return;
   questionnaireOpen = true;
   if (controls.isLocked) controls.unlock();
+  touchPlaying = false;
+  resetTouch();
+  document.documentElement.classList.remove('playing', 'needs-landscape');
+  if (bookOpen) closeBook();
   enterOverlay.classList.add('hidden');
   endHint.classList.add('hidden');
   collectAnswers = renderQuestionnaire(questionnaireBody);
@@ -466,6 +548,9 @@ function openQuestionnaire() {
 }
 
 finishButton.addEventListener('click', openQuestionnaire);
+document.getElementById('end-visit-btn').addEventListener('click', () => {
+  if (reachedSanctuary && !bookOpen) openQuestionnaire();
+});
 
 questionnaireSubmit.addEventListener('click', async () => {
   questionnaireSubmit.disabled = true;
@@ -628,7 +713,8 @@ function controlsInput() {
     return;
   }
 
-  const speed = keyStates['ShiftLeft'] || keyStates['ShiftRight'] ? RUN_SPEED : WALK_SPEED;
+  const speed = keyStates['ShiftLeft'] || keyStates['ShiftRight'] || touchState.run
+    ? RUN_SPEED : WALK_SPEED;
 
   inputVelocity.set(0, 0, 0);
 
@@ -636,6 +722,14 @@ function controlsInput() {
   if (keyStates['KeyS'] || keyStates['ArrowDown']) inputVelocity.add(getForwardVector().clone().multiplyScalar(-1));
   if (keyStates['KeyD'] || keyStates['ArrowRight']) inputVelocity.add(getSideVector());
   if (keyStates['KeyA'] || keyStates['ArrowLeft']) inputVelocity.add(getSideVector().clone().multiplyScalar(-1));
+
+  // Touch joystick: direction only. Speed stays exactly WALK_SPEED or
+  // RUN_SPEED (Run button), same as the keyboard, so every session in the
+  // data moves at the speeds reported in the paper's method section.
+  if (IS_TOUCH && (touchState.moveX !== 0 || touchState.moveY !== 0)) {
+    inputVelocity.addScaledVector(getForwardVector(), -touchState.moveY);
+    inputVelocity.addScaledVector(getSideVector(), touchState.moveX);
+  }
 
   if (inputVelocity.lengthSq() > 0) {
     inputVelocity.normalize().multiplyScalar(speed);
@@ -807,7 +901,7 @@ const MARKER_VISIBLE_DISTANCE = 60; // m — dot starts fading in from this far
 // ~12 m away from it. A tight radius would make those unclickable.
 const MARKER_ACTIVATE_DISTANCE = 18; // m
 const MARKER_ACTIVATE_COS = Math.cos(THREE.MathUtils.degToRad(9)); // "looking at it" tolerance
-const MARKER_SCALE = 0.7; // m — world size of the dot; it swells when aimed at
+const MARKER_SCALE = IS_TOUCH ? 0.95 : 0.7; // m — world size of the dot; it swells when aimed at (bigger on phones, easier to see)
 
 // A white dot with a soft glow around it and a dark rim, drawn once onto a
 // canvas and reused as every marker's sprite texture — no external art asset
@@ -1057,6 +1151,7 @@ function updatePlacementMode() {
 const hotspotRay = new THREE.Raycaster();
 const infoBook = document.getElementById('info-book');
 const infoBookPage = document.getElementById('info-book-page');
+const bookCloseButton = document.getElementById('book-close');
 
 let activeHotspot = null; // the marker currently in range + in view, if any
 let bookOpen = false;
@@ -1095,12 +1190,17 @@ function openBook(hotspot) {
   bookPageIndex = 0;
   renderBookPage();
   infoBook.classList.remove('hidden');
+  infoBook.scrollTop = 0;
+  bookCloseButton.classList.remove('hidden');
+  document.documentElement.classList.add('book-open');
   bookOpen = true;
   study.scrollOpened(hotspot.id, playerOffset());
 }
 
 function closeBook() {
   infoBook.classList.add('hidden');
+  bookCloseButton.classList.add('hidden');
+  document.documentElement.classList.remove('book-open');
   bookOpen = false;
   study.scrollClosed();
 }
@@ -1108,7 +1208,7 @@ function closeBook() {
 function updateHotspots(elapsedTime) {
   if (!markersPlaced) return;
 
-  if (!controls.isLocked || bookOpen) return;
+  if (!isActive() || bookOpen) return;
 
   camera.getWorldDirection(playerDirection);
 
@@ -1133,11 +1233,15 @@ function updateHotspots(elapsedTime) {
       continue;
     }
 
-    let occluded = false;
-    if (fade > 0 && templeModel && distance > 0.01) {
-      hotspotRay.set(camera.position, toMarker.normalize());
-      hotspotRay.far = distance - 0.15;
-      occluded = hotspotRay.intersectObject(templeModel, true).length > 0;
+    let occluded = marker.occluded || false;
+    if (frameCount % RAY_EVERY === 0) {
+      occluded = false;
+      if (fade > 0 && templeModel && distance > 0.01) {
+        hotspotRay.set(camera.position, toMarker.clone().normalize());
+        hotspotRay.far = distance - 0.15;
+        occluded = hotspotRay.intersectObject(templeModel, true).length > 0;
+      }
+      marker.occluded = occluded;
     }
 
     const visible = fade > 0 && !occluded;
@@ -1185,6 +1289,85 @@ document.addEventListener('mousedown', (e) => {
   }
 });
 
+// --- Touch: tapping a dot, closing a scroll, looking around -----------------
+// A finger can't aim a crosshair at a small dot, so a tap is matched to the
+// nearest dot ON SCREEN within a generous radius instead.
+const TAP_RADIUS_PX = 64;
+const tapVector = new THREE.Vector3();
+const tapForward = new THREE.Vector3();
+
+function hotspotAtScreen(clientX, clientY) {
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  camera.getWorldDirection(tapForward);
+
+  let best = null;
+  let bestDist = TAP_RADIUS_PX;
+  for (const marker of hotspotMarkers) {
+    if (!marker.sprite.visible) continue; // hidden, out of range or behind a wall
+    tapVector.copy(marker.sprite.position).sub(camera.position);
+    const distance = tapVector.length();
+    if (distance > MARKER_ACTIVATE_DISTANCE) continue;
+    if (tapVector.dot(tapForward) <= 0) continue; // behind the viewer
+    tapVector.copy(marker.sprite.position).project(camera);
+    const sx = (tapVector.x * 0.5 + 0.5) * width;
+    const sy = (-tapVector.y * 0.5 + 0.5) * height;
+    const d = Math.hypot(sx - clientX, sy - clientY);
+    if (d < bestDist) {
+      bestDist = d;
+      best = marker;
+    }
+  }
+  return best;
+}
+
+function turnBookPage() {
+  if (bookPageIndex < bookPages.length - 1) {
+    bookPageIndex++;
+    renderBookPage();
+    study.scrollPageTurned();
+  }
+}
+
+const lookEuler = new THREE.Euler(0, 0, 0, 'YXZ');
+const LOOK_SENSITIVITY = 0.0042; // radians per pixel of finger travel
+
+if (IS_TOUCH) {
+  initTouch({
+    onLook(dx, dy) {
+      if (!touchPlaying) return;
+      lookEuler.setFromQuaternion(camera.quaternion);
+      lookEuler.y -= dx * LOOK_SENSITIVITY;
+      lookEuler.x -= dy * LOOK_SENSITIVITY;
+      lookEuler.x = Math.max(-Math.PI / 2 + 0.05, Math.min(Math.PI / 2 - 0.05, lookEuler.x));
+      camera.quaternion.setFromEuler(lookEuler);
+    },
+    onTap(x, y) {
+      if (!touchPlaying) return;
+      if (bookOpen) {
+        closeBook(); // a tap outside the scroll closes it
+        return;
+      }
+      const marker = hotspotAtScreen(x, y);
+      if (marker) openBook(marker.hotspot);
+    },
+    onJump() {
+      if (touchPlaying) jumpRequested = true;
+    },
+    onTorch() {
+      if (touchPlaying) setTorch(!torchLit);
+    },
+    onPause: pauseTouchPlay,
+  });
+
+  // Tapping the scroll itself turns to its "...More Info" page, if it has one.
+  infoBook.addEventListener('click', () => {
+    if (bookOpen) turnBookPage();
+  });
+  bookCloseButton.addEventListener('click', () => closeBook());
+  torchHint.textContent = 'Tap Torch to light it';
+}
+
 // Stop the browser's right-click menu from popping up over the game —
 // right-click is repurposed above to close the book.
 document.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -1222,7 +1405,7 @@ document.addEventListener('keydown', (e) => {
 
 // --- Torch behavior: auto on/off + flicker --------------------------------
 function updateTorch() {
-  if (templeModel) {
+  if (templeModel && frameCount % RAY_EVERY === 0) {
     upRay.set(camera.position, new THREE.Vector3(0, 1, 0));
     upRay.far = ROOF_CHECK_DISTANCE;
     const hits = upRay.intersectObject(templeModel, true);
@@ -1249,7 +1432,7 @@ function updateTorch() {
     torchLight.intensity = 2.2 * breathe * jitter;
   }
 
-  torchHint.classList.toggle('hidden', !(isRoofed && !torchLit));
+  torchHint.classList.toggle('hidden', !(isActive() && isRoofed && !torchLit));
 }
 
 // --- Head bob + footsteps --------------------------------------------
@@ -1270,9 +1453,9 @@ let bobAmplitude = 0;
 let lastStepIndex = 0;
 
 function updateHeadBob(frameDeltaTime) {
-  const running = keyStates['ShiftLeft'] || keyStates['ShiftRight'];
+  const running = keyStates['ShiftLeft'] || keyStates['ShiftRight'] || touchState.run;
   const horizontalSpeedSq = playerVelocity.x * playerVelocity.x + playerVelocity.z * playerVelocity.z;
-  const isWalking = controls.isLocked && playerOnFloor && horizontalSpeedSq > 0.01;
+  const isWalking = isActive() && playerOnFloor && horizontalSpeedSq > 0.01;
 
   const targetAmplitude = isWalking ? (running ? BOB_AMPLITUDE_RUN : BOB_AMPLITUDE_WALK) : 0;
   bobAmplitude += (targetAmplitude - bobAmplitude) * Math.min(1, frameDeltaTime * 8);
@@ -1409,10 +1592,22 @@ stats.dom.classList.add('stats-panel');
 document.body.appendChild(stats.dom);
 
 // --- Resize handling --------------------------------------------------
-window.addEventListener('resize', () => {
+function onResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+}
+window.addEventListener('resize', onResize);
+// Phones report the new size a moment after rotating.
+window.addEventListener('orientationchange', () => setTimeout(onResize, 250));
+
+// A phone that runs out of graphics memory loses the WebGL context. Say so
+// plainly rather than leaving a frozen picture.
+canvas.addEventListener('webglcontextlost', (event) => {
+  event.preventDefault();
+  loadingText.textContent =
+    'The page ran out of graphics memory on this device. Please close other tabs and reload.';
+  loadingScreen.classList.remove('hidden');
 });
 
 // --- Animate loop -----------------------------------------------------
@@ -1421,10 +1616,11 @@ const clock = new THREE.Clock();
 renderer.setAnimationLoop(() => {
   stats.begin();
 
+  frameCount++;
   const frameDeltaTime = Math.min(0.05, clock.getDelta());
   const deltaTime = frameDeltaTime / STEPS_PER_FRAME;
 
-  if (controls.isLocked) {
+  if (isActive()) {
     if (jumpRequested && playerOnFloor && !bookOpen) {
       playerVelocity.y = JUMP_VELOCITY;
     }
@@ -1448,7 +1644,7 @@ renderer.setAnimationLoop(() => {
 
   // Only count time the participant is actually in the temple — not time
   // spent sitting on the pause screen with the pointer unlocked.
-  if (controls.isLocked) {
+  if (isActive()) {
     study.tick(frameDeltaTime, playerOffset(), 1 / Math.max(frameDeltaTime, 0.001));
   }
   updateEndPrompt(playerOffset());

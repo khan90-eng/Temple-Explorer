@@ -176,6 +176,9 @@ export const study = {
         pixelRatio: window.devicePixelRatio,
         fpsAvg: this._fpsCount ? round(this._fpsSum / this._fpsCount, 1) : null,
         fpsMin: this._fpsMin === Infinity ? null : round(this._fpsMin, 1),
+        // 'touch' (phone/tablet) or 'mouse-keyboard' (PC), set by main.js, so the
+        // two groups can be separated in the analysis.
+        inputMode: this.inputMode || 'mouse-keyboard',
         userAgent: navigator.userAgent,
         language: navigator.language,
       },

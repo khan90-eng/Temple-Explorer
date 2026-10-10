@@ -298,6 +298,7 @@ const CSV_COLUMNS = [
   ['suggestions', (s) => s.questionnaire?.suggestions],
   ['fps_avg', (s) => s.device?.fpsAvg],
   ['fps_min', (s) => s.device?.fpsMin],
+  ['input_mode', (s) => s.device?.inputMode],
   ['screen', (s) => s.device?.screen],
   ['browser', (s) => s.device?.userAgent],
 ];

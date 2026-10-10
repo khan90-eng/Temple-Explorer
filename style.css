@@ -737,3 +737,256 @@ html, body {
 }
 
 #tutorial-skip:hover { background: rgba(255, 255, 255, 0.12); }
+
+/* ==========================================================================
+   Phones and tablets (Session 10)
+   Everything below is scoped to html.touch (finger is the primary pointer) or
+   to a small-screen media query, so the desktop layout is unchanged.
+   ========================================================================== */
+
+/* Mouse-only and finger-only wording. */
+html.touch .desk-only { display: none !important; }
+html:not(.touch) .touch-only { display: none !important; }
+
+html, body { overscroll-behavior: none; }
+
+html.touch body {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+/* The page URL bar on phones changes the viewport height; dvh follows it. */
+html.touch #app {
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  touch-action: none;
+}
+
+html.touch .stats-panel { display: none !important; }
+html.touch #crosshair { display: none; }
+html.touch #placement-panel { display: none !important; }
+
+/* Smaller, tucked-in minimap. */
+html.touch #minimap-container {
+  top: max(8px, env(safe-area-inset-top));
+  right: max(8px, env(safe-area-inset-right));
+  padding: 4px;
+}
+html.touch #minimap { height: 128px; }
+
+/* --- On-screen controls ------------------------------------------------ */
+#touch-ui { display: none; }
+html.touch.playing #touch-ui { display: block; }
+
+.touch-zone {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  z-index: 5;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+#touch-left  { left: 0;  width: 42%; }
+#touch-right { right: 0; width: 58%; }
+
+#joy-base {
+  position: fixed;
+  z-index: 6;
+  width: 128px;
+  height: 128px;
+  margin: -64px 0 0 -64px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  background: rgba(11, 13, 16, 0.25);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+#joy-base.active { opacity: 1; }
+
+#joy-knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 54px;
+  height: 54px;
+  margin: -27px 0 0 -27px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  border: 2px solid rgba(255, 255, 255, 0.8);
+}
+
+/* A faint hint of where the joystick lives, before the first touch. */
+html.touch.playing #touch-left::after {
+  content: '';
+  position: absolute;
+  left: max(34px, env(safe-area-inset-left));
+  bottom: max(34px, env(safe-area-inset-bottom));
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: 2px dashed rgba(255, 255, 255, 0.22);
+  pointer-events: none;
+}
+
+.touch-btn {
+  z-index: 7;
+  min-width: 58px;
+  height: 58px;
+  padding: 0 10px;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: 29px;
+  background: rgba(11, 13, 16, 0.5);
+  color: #f2efe6;
+  font: 600 13px system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.touch-btn.big { min-width: 78px; height: 78px; border-radius: 39px; font-size: 15px; }
+.touch-btn.on  { background: rgba(214, 188, 130, 0.55); border-color: #f4e9cd; color: #1d1a14; }
+.touch-btn:active { background: rgba(255, 255, 255, 0.28); }
+
+#touch-buttons {
+  position: fixed;
+  z-index: 7;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+#touch-pause {
+  position: fixed;
+  top: max(8px, env(safe-area-inset-top));
+  left: max(8px, env(safe-area-inset-left));
+  min-width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  font-size: 14px;
+  letter-spacing: 0.1em;
+}
+
+/* Hints sit clear of the thumbs. */
+html.touch #torch-hint { bottom: 22px; font-size: 13px; }
+html.touch #end-hint {
+  bottom: 14px;
+  white-space: normal;
+  width: max-content;
+  max-width: 54vw;
+  font-size: 13px;
+  text-align: center;
+}
+#end-visit-btn {
+  margin-left: 6px;
+  padding: 7px 13px;
+  border: 1px solid rgba(214, 188, 130, 0.6);
+  border-radius: 6px;
+  background: rgba(214, 188, 130, 0.22);
+  color: #f4e9cd;
+  font: 600 13px system-ui, sans-serif;
+  pointer-events: auto;
+}
+
+/* --- Scroll (info book) on touch: fills the screen width and scrolls ----- */
+#book-close { display: none; }
+html.touch #info-book {
+  width: 94vw;
+  max-height: 92vh;
+  max-height: 92dvh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  filter: none;
+}
+html.touch #info-book-page { width: 100%; }
+html.touch #book-close:not(.hidden) {
+  display: block;
+  position: fixed;
+  z-index: 8;
+  top: max(8px, env(safe-area-inset-top));
+  right: max(8px, env(safe-area-inset-right));
+  width: 46px;
+  height: 46px;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  background: rgba(11, 13, 16, 0.75);
+  color: #fff;
+  font: 22px system-ui, sans-serif;
+}
+
+/* --- "Turn your phone sideways" ---------------------------------------- */
+#rotate-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  background: #0b0d10;
+  color: #f2efe6;
+  font: 16px system-ui, sans-serif;
+  text-align: center;
+}
+.rotate-box { padding: 24px; }
+.rotate-box p { margin: 8px 0; }
+.rotate-icon {
+  width: 54px;
+  height: 90px;
+  margin: 0 auto 22px;
+  border: 3px solid #d6bc82;
+  border-radius: 10px;
+  animation: rotate-hint 2.4s ease-in-out infinite;
+}
+@keyframes rotate-hint {
+  0%, 25%  { transform: rotate(0deg); }
+  65%, 100% { transform: rotate(-90deg); }
+}
+@media (orientation: portrait) {
+  html.touch.needs-landscape #rotate-overlay { display: flex; }
+}
+
+/* --- Small screens: sign-in, pause, questionnaire, thank-you ------------- */
+@media (max-width: 700px), (max-height: 520px) {
+  #signin-overlay {
+    overflow-y: auto;
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding: 12px 0;
+  }
+  .signin-box {
+    box-sizing: border-box;
+    margin: auto;
+    width: min(440px, 92vw);
+    padding: 20px 20px 18px;
+  }
+  .signin-box h1 { font-size: 20px; }
+  .signin-sub { margin-bottom: 16px; }
+  .field { margin-bottom: 14px; }
+  .consent { margin: 16px 0; }
+  #student-id, #institution { font-size: 16px; } /* 16px stops iOS zooming into the field */
+
+  .enter-box { max-width: 86vw; padding: 14px 18px; font-size: 14px; }
+  .enter-box p { line-height: 1.5; }
+
+  #questionnaire-overlay { padding: 12px 8px; -webkit-overflow-scrolling: touch; }
+  .questionnaire-box { box-sizing: border-box; padding: 20px 16px 18px; }
+  .q-textarea, .q-other-input { font-size: 16px; }
+  .q-choice { padding: 11px 15px; }
+  .q-scale-btn { width: 46px; padding: 11px 0; }
+
+  .finished-box { box-sizing: border-box; padding: 22px 20px; }
+  #tutorial-video { max-height: 70vh; }
+}
+
+html.touch #end-hint { z-index: 7; }
+#end-hint.hidden #end-visit-btn { pointer-events: none; }
+
+/* While a scroll is open it owns the screen: hide the game controls and map. */
+html.book-open #touch-buttons,
+html.book-open #minimap-container { display: none; }
