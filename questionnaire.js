@@ -216,7 +216,7 @@ export const QUESTIONS = [
     id: 'device_used',
     type: 'choice',
     text: 'Which device did you use?',
-    options: ['Laptop', 'Desktop computer', 'Tablet', 'Other (specify)'],
+    options: ['Laptop', 'Desktop computer', 'Mobile phone', 'Tablet', 'Other (specify)'],
     otherOption: 'Other (specify)',
   },
 

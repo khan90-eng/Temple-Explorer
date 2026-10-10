@@ -18,7 +18,7 @@
     })();
   </script>
   <title>Temple Explorer</title>
-  <link rel="stylesheet" href="style.css?v=15" />
+  <link rel="stylesheet" href="style.css?v=16" />
   <script type="importmap">
     {
       "imports": {
@@ -49,6 +49,20 @@
         </div>
       </div>
 
+      <!-- Only for "Other": a quick pick keeps the data clean (the same few labels
+           every time), and "Other (specify)" catches anything else. -->
+      <div class="field hidden" id="occupation-field">
+        <span class="field-label">Your role</span>
+        <div class="role-row occ-row">
+          <button type="button" class="occ-btn" data-occ="Architect">Architect</button>
+          <button type="button" class="occ-btn" data-occ="Teacher / Lecturer">Teacher / Lecturer</button>
+          <button type="button" class="occ-btn" data-occ="Researcher">Researcher</button>
+          <button type="button" class="occ-btn" data-occ="Other">Other (specify)</button>
+        </div>
+        <input id="occupation-detail" class="hidden" type="text" autocomplete="off"
+               spellcheck="false" placeholder="e.g. interior designer, engineer" />
+      </div>
+
       <div class="field hidden" id="student-id-field">
         <label class="field-label" for="student-id">Student ID <span>(optional)</span></label>
         <input id="student-id" type="text" autocomplete="off" spellcheck="false"
@@ -57,7 +71,7 @@
       </div>
 
       <div class="field hidden" id="institution-field">
-        <label class="field-label" for="institution">Institution <span>(optional)</span></label>
+        <label class="field-label" for="institution">Institution or workplace <span>(optional)</span></label>
         <input id="institution" type="text" autocomplete="off" spellcheck="false"
                placeholder="e.g. BUET" />
       </div>
@@ -69,7 +83,7 @@
       </label>
 
       <button type="button" id="signin-start" disabled>Begin</button>
-      <p class="signin-error hidden" id="signin-error">Choose Student or Other, and tick the box.</p>
+      <p class="signin-error hidden" id="signin-error">Choose Student or Other (and your role if Other), and tick the box.</p>
     </div>
   </div>
 
@@ -161,6 +175,6 @@
     </div>
   </div>
 
-  <script type="module" src="main.js?v=23"></script>
+  <script type="module" src="main.js?v=24"></script>
 </body>
 </html>

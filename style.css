@@ -990,3 +990,36 @@ html.touch #end-hint { z-index: 7; }
 /* While a scroll is open it owns the screen: hide the game controls and map. */
 html.book-open #touch-buttons,
 html.book-open #minimap-container { display: none; }
+
+/* "Other" participants' role picker on the sign-in screen (Session 10). */
+.occ-row { flex-wrap: wrap; }
+.occ-btn {
+  flex: 1 1 auto;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 6px;
+  background: transparent;
+  color: #f2efe6;
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.occ-btn:hover { background: rgba(255, 255, 255, 0.07); }
+.occ-btn.selected {
+  border-color: #d6bc82;
+  background: rgba(214, 188, 130, 0.16);
+  color: #f4e9cd;
+}
+#occupation-detail {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #f2efe6;
+  font: 16px system-ui, sans-serif;
+}
+#occupation-detail:focus { outline: none; border-color: #d6bc82; }
+#occupation-detail.hidden { display: none; }

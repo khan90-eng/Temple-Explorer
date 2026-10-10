@@ -28,7 +28,7 @@ import { Sky } from 'three/addons/objects/Sky.js';
 import Stats from 'three/addons/libs/stats.module.js';
 import { hotspots } from './content.js?v=5';
 import { study } from './study.js?v=3';
-import { renderQuestionnaire } from './questionnaire.js?v=2';
+import { renderQuestionnaire } from './questionnaire.js?v=3';
 import { IS_TOUCH, touchState, initTouch, resetTouch } from './touch.js?v=1';
 
 // Recorded on every session so phone and PC runs can be told apart in the data.
@@ -364,6 +364,8 @@ const ROOF_CHECK_DISTANCE = 25; // m — "is there a ceiling close overhead?"
 const signinOverlay = document.getElementById('signin-overlay');
 const studentIdField = document.getElementById('student-id-field');
 const studentIdInput = document.getElementById('student-id');
+const occupationField = document.getElementById('occupation-field');
+const occupationDetail = document.getElementById('occupation-detail');
 const institutionField = document.getElementById('institution-field');
 const institutionInput = document.getElementById('institution');
 const consentCheck = document.getElementById('consent-check');
@@ -385,6 +387,7 @@ const CONSENT_TEXT =
   'recorded for this study.';
 
 let chosenRole = null;
+let chosenOccupation = null; // 'Other' participants only
 
 for (const button of document.querySelectorAll('.role-btn')) {
   button.addEventListener('click', () => {
@@ -393,21 +396,41 @@ for (const button of document.querySelectorAll('.role-btn')) {
       other.classList.toggle('selected', other === button);
     }
     studentIdField.classList.toggle('hidden', chosenRole !== 'student');
-    institutionField.classList.toggle('hidden', chosenRole !== 'student');
+    // Everyone may say where they study or work; only "Other" is asked for a role.
+    institutionField.classList.remove('hidden');
+    occupationField.classList.toggle('hidden', chosenRole !== 'other');
     refreshSigninState();
   });
 }
 
+for (const button of document.querySelectorAll('.occ-btn')) {
+  button.addEventListener('click', () => {
+    chosenOccupation = button.dataset.occ;
+    for (const other of document.querySelectorAll('.occ-btn')) {
+      other.classList.toggle('selected', other === button);
+    }
+    occupationDetail.classList.toggle('hidden', chosenOccupation !== 'Other');
+    if (chosenOccupation === 'Other') occupationDetail.focus();
+    refreshSigninState();
+  });
+}
+occupationDetail.addEventListener('input', refreshSigninState);
+
 consentCheck.addEventListener('change', refreshSigninState);
 
 function refreshSigninState() {
-  const ready = Boolean(chosenRole) && consentCheck.checked;
+  const occupationOk =
+    chosenRole !== 'other' ||
+    (Boolean(chosenOccupation) &&
+      (chosenOccupation !== 'Other' || occupationDetail.value.trim().length > 0));
+  const ready = Boolean(chosenRole) && consentCheck.checked && occupationOk;
   signinStart.disabled = !ready;
   if (ready) signinError.classList.add('hidden');
 }
 
 signinStart.addEventListener('click', () => {
-  if (!chosenRole || !consentCheck.checked) {
+  refreshSigninState();
+  if (signinStart.disabled) {
     signinError.classList.remove('hidden');
     return;
   }
@@ -415,7 +438,13 @@ signinStart.addEventListener('click', () => {
   study.begin({
     role: chosenRole,
     studentId: chosenRole === 'student' ? studentIdInput.value.trim() : '',
-    institution: chosenRole === 'student' ? institutionInput.value.trim() : '',
+    institution: institutionInput.value.trim(),
+    // Non-students only: a fixed label (Architect, Teacher / Lecturer,
+    // Researcher, Other) plus the typed detail when it is Other.
+    occupation: chosenRole === 'other' ? chosenOccupation : '',
+    occupationDetail:
+      chosenRole === 'other' && chosenOccupation === 'Other'
+        ? occupationDetail.value.trim() : '',
     consentedAt: new Date().toISOString(),
     consentText: CONSENT_TEXT,
   });
