@@ -1023,3 +1023,13 @@ html.book-open #minimap-container { display: none; }
 }
 #occupation-detail:focus { outline: none; border-color: #d6bc82; }
 #occupation-detail.hidden { display: none; }
+
+/* First entry screen: a short intro and no exit button (Session 10). The
+   Finish button appears from the first pause onward. */
+#enter-overlay.first-visit #finish-button { display: none; }
+.enter-intro {
+  margin: 0 0 14px;
+  font-size: 16px;
+  line-height: 1.55;
+  color: #e8d9b5;
+}

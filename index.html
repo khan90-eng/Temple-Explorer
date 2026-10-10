@@ -18,7 +18,7 @@
     })();
   </script>
   <title>Temple Explorer</title>
-  <link rel="stylesheet" href="style.css?v=16" />
+  <link rel="stylesheet" href="style.css?v=17" />
   <script type="importmap">
     {
       "imports": {
@@ -96,8 +96,10 @@
     </div>
   </div>
 
-  <div id="enter-overlay" class="hidden">
+  <div id="enter-overlay" class="hidden first-visit">
     <div class="enter-box">
+      <p class="enter-intro">Explore the temple to unlock hidden information.<br />
+      Look for the glowing white dots <span class="desk-only">and click</span><span class="touch-only">and tap</span> them to open scrolls of history.</p>
       <p><strong class="desk-only">Click to enter</strong><strong class="touch-only">Tap to enter</strong></p>
       <p class="desk-only">W A S D or arrow keys to walk · mouse to look · Shift to run · Space to jump · E to light/put out torch · Esc to pause</p>
       <p class="touch-only">Left thumb: walk · Drag on the right side: look around · Tap a white dot to read it · Buttons: Jump, Run and Torch · II to pause</p>
@@ -175,6 +177,6 @@
     </div>
   </div>
 
-  <script type="module" src="main.js?v=24"></script>
+  <script type="module" src="main.js?v=25"></script>
 </body>
 </html>

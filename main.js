@@ -512,6 +512,7 @@ function tryFullscreenLandscape() {
 function startTouchPlay() {
   touchPlaying = true;
   enterOverlay.classList.add('hidden');
+  enterOverlay.classList.remove('first-visit');
   document.documentElement.classList.add('playing');
   tryFullscreenLandscape();
 }
@@ -532,7 +533,12 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden) pauseTouchPlay();
 });
 
-controls.addEventListener('lock', () => enterOverlay.classList.add('hidden'));
+controls.addEventListener('lock', () => {
+  enterOverlay.classList.add('hidden');
+  // The "Finish" button only appears on later pauses, not on the very first
+  // entry screen: nobody should be offered the exit before they have walked in.
+  enterOverlay.classList.remove('first-visit');
+});
 controls.addEventListener('unlock', () => {
   if (!study.active) return;   // already finished; leave the thank-you screen up
   if (questionnaireOpen) return; // the questionnaire is the screen now
